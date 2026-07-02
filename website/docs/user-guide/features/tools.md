@@ -10,7 +10,7 @@ Tools are functions that extend the agent's capabilities. They're organized into
 
 ## Available Tools
 
-Hermes ships with a broad built-in tool registry covering web search, browser automation, terminal execution, file editing, memory, delegation, RL training, messaging delivery, Home Assistant, and more.
+Hermes ships with a broad built-in tool registry covering web search, browser automation, terminal execution, file editing, memory, delegation, scheduled tasks, Home Assistant, and more.
 
 :::note
 **Honcho cross-session memory** is available as a memory provider plugin (`plugins/memory/honcho/`), not as a built-in toolset. See [Plugins](./plugins.md) for installation.
@@ -27,7 +27,7 @@ High-level categories:
 | **Media** | `vision_analyze`, `image_generate`, `text_to_speech` | Multimodal analysis and generation. |
 | **Agent orchestration** | `todo`, `clarify`, `execute_code`, `delegate_task` | Planning, clarification, code execution, and subagent delegation. |
 | **Memory & recall** | `memory`, `session_search` | Persistent memory and session search. |
-| **Automation & delivery** | `cronjob`, `send_message` | Scheduled tasks with create/list/update/pause/resume/run/remove actions, plus outbound messaging delivery. |
+| **Automation** | `cronjob` | Scheduled tasks with create/list/update/pause/resume/run/remove actions. Outbound delivery is handled by cron's own delivery, the `hermes send` CLI, and the gateway notifier — not by an agent-callable tool. |
 | **Integrations** | `ha_*`, MCP server tools | Home Assistant, MCP, and other integrations. |
 
 For the authoritative code-derived registry, see [Built-in Tools Reference](/reference/tools-reference) and [Toolsets Reference](/reference/toolsets-reference).
@@ -49,7 +49,7 @@ hermes tools
 hermes tools
 ```
 
-Common toolsets include `web`, `search`, `terminal`, `file`, `browser`, `vision`, `image_gen`, `moa`, `skills`, `tts`, `todo`, `memory`, `session_search`, `cronjob`, `code_execution`, `delegation`, `clarify`, `homeassistant`, `messaging`, `spotify`, `discord`, `discord_admin`, `debugging`, and `safe`.
+Common toolsets include `web`, `search`, `terminal`, `file`, `browser`, `vision`, `image_gen`, `skills`, `tts`, `todo`, `memory`, `session_search`, `cronjob`, `code_execution`, `delegation`, `clarify`, `homeassistant`, `messaging`, `spotify`, `discord`, `discord_admin`, `debugging`, and `safe`.
 
 See [Toolsets Reference](/reference/toolsets-reference) for the full set, including platform presets such as `hermes-cli`, `hermes-telegram`, and dynamic MCP toolsets like `mcp-<server>`.
 
@@ -65,13 +65,14 @@ The terminal tool can execute commands in different environments:
 | `singularity` | HPC containers | Cluster computing, rootless |
 | `modal` | Cloud execution | Serverless, scale |
 | `daytona` | Cloud sandbox workspace | Persistent remote dev environments |
+| `cube_sandbox` | CubeSandbox microVM (E2B-compatible) | KVM-isolated sandboxes, split Pod/VM deployments |
 
 ### Configuration
 
 ```yaml
 # In ~/.hermes/config.yaml
 terminal:
-  backend: local    # or: docker, ssh, singularity, modal, daytona
+  backend: local    # or: docker, ssh, singularity, modal, daytona, cube_sandbox
   cwd: "."          # Working directory
   timeout: 180      # Command timeout in seconds
 ```
@@ -120,6 +121,20 @@ hermes config set terminal.singularity_image ~/python.sif
 uv pip install modal
 modal setup
 hermes config set terminal.backend modal
+```
+
+### CubeSandbox (MicroVM)
+
+Requires the optional `cube` extra and Cube control-plane credentials. See [Configuration → CubeSandbox Backend](../configuration.md#cubesandbox-backend) for direct backend mode and split mode (`SANDBOX_TYPE=cube`).
+
+```bash
+pip install "hermes-agent[cube]"
+# Direct backend:
+hermes config set terminal.backend cube_sandbox
+# Split mode (file tools on Pod, terminal/code in microVM):
+export SANDBOX_TYPE=cube
+export CUBE_API_URL=https://cube.example.com
+export CUBE_TEMPLATE_ID=tpl-...
 ```
 
 ### Container Resources
